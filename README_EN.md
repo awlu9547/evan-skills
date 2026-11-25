@@ -1,7 +1,6 @@
 <div align="center">
-  <h1>Evan Skills</h1>
   <p>
-    <strong>Engineering-grade AI agent skills for real Git repositories: plan with cross-model verification, then build, test, review, and ship stage by stage</strong>
+    <img src="assets/readme-banner-en.jpg" alt="Evan Skills: Engineering-Grade AI Agent Workflow" width="100%">
   </p>
   <p>
     <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-2ea44f"></a>
@@ -38,21 +37,7 @@
 
 ## 1. Workflow Philosophy
 
-Most failures in non-trivial agent coding tasks stem from four habits: **editing code before understanding entry points**, **single-model blind spots**, **context rot in long sessions**, and **claiming tests pass without re-running after the last edit**. `evan-plan` and `evan-build` separate thinking from building through an explicit lifecycle:
-
-```mermaid
-flowchart LR
-    A["Inspect Requirements & Git Baseline"] --> B["evan-plan: Draft Plan A (DRAFT)"]
-    B -->|"Lightweight"| D["User Confirms & Freezes (FROZEN)"]
-    B -->|"Standard"| C["Other Model Family Plan B (AWAITING_OPINION)"]
-    C -->|"Evidence-Backed Reconciliation (MERGING)"| D
-    D --> E["evan-build: Single-Thread Stage Execution"]
-    E --> F["Re-Run Tests + Open Code Review"]
-    F --> G["Stage Commit & Update Progress"]
-    G -->|"More Stages"| H["Fresh Thread Handoff"]
-    H --> E
-    G -->|"Final Stage"| I["merge-tree Check & Whole-Branch Review"]
-```
+Most failures in non-trivial agent coding tasks stem from four habits: **editing code before understanding entry points**, **single-model blind spots**, **context rot in long sessions**, and **claiming tests pass without re-running after the last edit**. `evan-plan` and `evan-build` separate thinking from building through an explicit lifecycle (`DRAFT` → `AWAITING_OPINION` → `MERGING` → `FROZEN`):
 
 - **Read-only planning**: `evan-plan` only edits plan artifacts under `docs/<feature-slug>/` and never touches production source files early.
 - **Cross-model second opinion**: Standard-tier tasks dispatch a separate model family to produce an independent `PLAN_B.md`; rejecting an alternative requires concrete code or test evidence.

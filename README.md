@@ -1,7 +1,6 @@
 <div align="center">
-  <h1>Evan Skills</h1>
   <p>
-    <strong>面向真实 Git 项目的工程化 AI Agent 技能集：先规划论证，再分阶段实施、硬验证与收口</strong>
+    <img src="assets/readme-banner-cn.jpg" alt="Evan Skills：工程化 AI Agent 工作流" width="100%">
   </p>
   <p>
     <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-2ea44f"></a>
@@ -38,21 +37,7 @@
 
 ## 1. 工作流理念
 
-大型或跨模块改动的常见翻车点在于：**未查明现状就直接改代码**、**单一模型思考存在盲区**、**长对话后期上下文腐烂**以及**改完就宣称通过却未重跑最新验证**。`evan-plan` 与 `evan-build` 通过显式的计划状态机将“想清楚”和“写正确”彻底解耦：
-
-```mermaid
-flowchart LR
-    A["需求与 Git 基准调研"] --> B["evan-plan: 方案 A (DRAFT)"]
-    B -->|"轻量档"| D["用户确认定稿 (FROZEN)"]
-    B -->|"标准档"| C["异构模型独立方案 B (AWAITING_OPINION)"]
-    C -->|"带证据裁决分歧 (MERGING)"| D
-    D --> E["evan-build: 单线程分阶段实施"]
-    E --> F["改码必重测 + Open Code Review"]
-    F --> G["单阶段提交与进度回写"]
-    G -->|"还有剩余阶段"| H["干净新线程接力"]
-    H --> E
-    G -->|"最终阶段"| I["merge-tree 预检与整分支收口"]
-```
+大型或跨模块改动的常见翻车点在于：**未查明现状就直接改代码**、**单一模型思考存在盲区**、**长对话后期上下文腐烂**以及**改完就宣称通过却未重跑最新验证**。`evan-plan` 与 `evan-build` 通过显式的计划状态机（`DRAFT` → `AWAITING_OPINION` → `MERGING` → `FROZEN`）将“想清楚”和“写正确”彻底解耦：
 
 - **规划阶段严守只读**：`evan-plan` 仅更新 `docs/<feature-slug>/` 下的计划文件，不提前触碰业务代码。
 - **独立双方案抗盲区**：标准档任务会避开当前主模型家族独立生成 `PLAN_B.md`，所有否定结论必须给出代码或测试证据。
