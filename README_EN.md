@@ -37,11 +37,10 @@
 
 ## 1. Workflow Philosophy
 
-Most failures in non-trivial agent coding tasks stem from four habits: **editing code before understanding entry points**, **single-model blind spots**, **context rot in long sessions**, and **claiming tests pass without re-running after the last edit**. `evan-plan` and `evan-build` separate thinking from building through an explicit lifecycle (`DRAFT` → `AWAITING_OPINION` → `MERGING` → `FROZEN`):
-
-- **Read-only planning & out-of-repo plans**: `evan-plan` keeps the repository strictly read-only and stores plans out of repo at `~/.t3/plans/<repo>/<feature-slug>/PLAN.md` so planning drafts never pollute commits or PRs.
-- **Pre-plan gate & depth analysis**: Before writing any plan file, the agent probes accessible models and asks whether to enable an independent Plan B (user selects the model) and whether to branch into `~/.t3/worktrees/<repo>/<task-slug>`. Bug fixes require first-principles root-cause analysis; new features require second- and third-order impact analysis.
-- **Continuous execution, strict diff checks & handoff snapshots**: `evan-build` runs all stages continuously by default, verifies strong-relevance diffs, runs tests and bounded Open Code Review, commits only business code, writes real short SHAs and a 5-line handoff snapshot back to `PLAN.md`, and outputs a PR-ready summary at closure.
+1. **Plan without editing source.** `evan-plan` checks the freshest verifiable Git baseline and investigates root causes or downstream effects. For standard tasks, decide on a second opinion, branch strategy, and permission for relay threads together. A single stage touching at most three files and no cross-module contracts needs only the branch decision. Protected branches default to a separate branch.
+2. **Hand off one plan.** The frozen plan stays outside Git at `~/.t3/plans/<owner__repo>/<slug>/PLAN.md`. A local pointer lets each checkout find it again. Once asked to start, `evan-build` checks scope, reruns tests, reviews each stage and records the actual local commit using project conventions.
+3. **Revise without starting over.** If a contract or acceptance criterion changes, switch to `REVISING`. Keep completed stages, revise the affected work, and return to `FROZEN` only after confirmation. Handle PR feedback or CI failures as a follow-up stage.
+4. **Local completion is not publication.** Refresh the target, check for conflicts, offer local CI, and prepare a PR summary. You decide separately whether to push, create or update a PR, or merge it.
 
 ## 2. Quick Start
 
@@ -51,9 +50,11 @@ Once installed, mention the skill explicitly or describe your task naturally. Co
 |---|---|
 | Investigate & create an enterprise plan | `Use evan-plan to inspect this codebase, then ask me whether to run Plan B and create a new worktree branch without modifying source files.` |
 | Run dual-model comparison & merge | `Use evan-plan to list accessible cross-family models for Plan B, let me pick one, merge into PLAN.md, and delete the drafts.` |
-| Execute all stages continuously | `Use evan-build to run all stages from ~/.t3/plans/<repo>/<slug>/PLAN.md continuously through PR-ready closure.` |
-| Pause and report after each stage | `Use evan-build to execute ~/.t3/plans/<repo>/<slug>/PLAN.md, stopping to report after each stage.` |
-| Resume from handoff snapshot | `Use evan-build to check stage states and the handoff snapshot in ~/.t3/plans/<repo>/<slug>/PLAN.md, then continue.` |
+| Execute all stages continuously | `Use evan-build to run all stages from ~/.t3/plans/<owner__repo>/<slug>/PLAN.md continuously through PR-ready closure.` |
+| Pause and report after each stage | `Use evan-build to execute ~/.t3/plans/<owner__repo>/<slug>/PLAN.md, stopping to report after each stage.` |
+| Revise the plan after a blocker or new requirement | `Use evan-plan to revise ~/.t3/plans/<owner__repo>/<slug>/PLAN.md: <blocker or new requirement>; do not touch completed stages, only redo the affected parts.` |
+| Fix PR review comments | `Use evan-build with ~/.t3/plans/<owner__repo>/<slug>/PLAN.md to handle this batch of PR review comments; commit locally only, I will decide on pushing.` |
+| Resume from handoff snapshot | `Use evan-build to check stage states and the handoff snapshot in ~/.t3/plans/<owner__repo>/<slug>/PLAN.md, then continue.` |
 
 ## 3. Installation
 
@@ -120,8 +121,8 @@ cp -R ~/ai-skills/evan-skills/skills/evan-build ~/.agents/skills/
 
 | Skill | Status | Purpose | Typical Triggers | Details |
 |---|---|---|---|---|
-| [`evan-plan`](skills/evan-plan/README_EN.md) | `Stable` | Inspect Git baseline & code entry points, draft `PLAN.md`, and optionally reconcile a cross-model Plan B | `evan-plan`, plan first, staged plan | [Details](skills/evan-plan/README_EN.md) |
-| [`evan-build`](skills/evan-build/README_EN.md) | `Stable` | Implement `FROZEN` plans stage by stage with hard verification, OCR review, commits, and thread handoffs | `evan-build`, execute stage N | [Details](skills/evan-build/README_EN.md) |
+| [`evan-plan`](skills/evan-plan/README_EN.md) | `Stable` | Inspect Git baseline & code entry points, draft `PLAN.md`, and optionally reconcile a cross-model Plan B, and revise it after freezing | `evan-plan`, plan first, staged plan | [Details](skills/evan-plan/README_EN.md) |
+| [`evan-build`](skills/evan-build/README_EN.md) | `Stable` | Implement `FROZEN` plans stage by stage with hard verification, OCR review, convention-following commits, authorized thread handoffs, and PR review-feedback fixes | `evan-build`, execute stage N | [Details](skills/evan-build/README_EN.md) |
 
 ## 5. Runtime Dependencies and Environment Adaptation
 
@@ -130,8 +131,8 @@ The core planning, implementation, verification, and Git commit workflows work *
 | Enhancement | Preferred Tooling | Fallback When Unavailable |
 |---|---|---|
 | Cross-model `PLAN_B.md` generation | T3 Code orchestration (`orchestrator_capabilities` to list accessible models, user selects, `delegate_task`) | Offers a choice between single-plan mode or generating `HANDOFF_SECOND_OPINION.md` |
-| Pre-commit stage code review | `open-code-review` (`ocr` CLI) | Falls back to `open-code-review-delegate` (host-model review) or standard testing checks |
-| Cross-stage fresh-thread handoff | T3 Code thread relay (highest priority: `t3_worktree_status`, `t3_thread_launch`) | Outputs a compact copy-ready handoff prompt with `PLAN.md`, worktree path, and commit SHA |
+| Pre-commit stage code review | `open-code-review` (`ocr` CLI) | Falls back to `open-code-review-delegate` (host-model review); stops if neither reviewer is available |
+| Cross-stage fresh-thread handoff | Explicitly authorized T3 Code thread relay ( `t3_worktree_status`, `t3_thread_launch`) | Outputs a compact copy-ready handoff prompt with `PLAN.md`, worktree path, and commit SHA |
 
 ## 6. License
 

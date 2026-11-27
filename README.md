@@ -37,11 +37,10 @@
 
 ## 1. 工作流理念
 
-大型或跨模块改动的常见翻车点在于：**未查明现状就直接改代码**、**单一模型思考存在盲区**、**长对话后期上下文腐烂**以及**改完就宣称通过却未重跑最新验证**。`evan-plan` 与 `evan-build` 通过显式的计划状态机（`DRAFT` → `AWAITING_OPINION` → `MERGING` → `FROZEN`）将“想清楚”和“写正确”彻底解耦：
-
-- **规划阶段严守只读与仓库外留存**：`evan-plan` 全程只读业务仓库，不提前切分支；计划默认保存在仓库外的 `~/.t3/plans/<repo>/<feature-slug>/PLAN.md`，绝不进入 Git 提交与 PR。
-- **前置确认与分流深度分析**：生成计划前先询问是否启用方案 B（并由用户从当前可访问的异构模型中选定）以及是否在 `~/.t3/worktrees/<repo>/<task-slug>` 新建独立 worktree；Bug 修复走第一性原理根因分析，新增或优化必须推演二阶、三阶影响。
-- **连续实施、强相关校验与交接快照**：`evan-build` 默认按阶段连续跑完，每阶段做强相关 Diff 复核、改码重测与受控 Open Code Review，纯业务提交后把真实短哈希与 5 行交接快照回写到仓库外 `PLAN.md`，并在末阶段输出可直接提 PR 的交付摘要。
+1. **先定方案，不动代码。** `evan-plan` 从最新可核实的 Git 基准出发，查清根因或跨模块影响。标准任务一次确认是否需要第二方案、在哪个分支做、是否允许开新线程；单阶段、不超过 3 个文件且不改跨模块契约的小任务只问分支策略。受保护分支默认另开分支。
+2. **按同一份计划交接。** 冻结的计划留在 `~/.t3/plans/<owner__repo>/<slug>/PLAN.md`，不进 Git。每个工作区可以通过本地指针找回它。收到开工指令后，`evan-build` 按阶段检查差异、重跑验证、做审查，按项目规范本地提交并记下真实提交号。
+3. **中途改需求，不推倒重来。** 需要改契约或验收时转 `REVISING`，保留已完成阶段，只改受影响部分，经你确认再恢复 `FROZEN`。PR 评审或 CI 失败按追加阶段修复。
+4. **本地完成不等于已经发布。** 收口先刷新目标分支、预检冲突、提议本地 CI，并给出 PR 摘要。是否 push、创建或更新 PR、合并 PR，逐项由你决定。
 
 ## 2. 快速开始
 
@@ -51,9 +50,11 @@
 |---|---|
 | 调研现状并制定企业级计划 | `使用 evan-plan 调研这个问题，评估后询问我是否开方案 B 及分支策略，不要改业务代码。` |
 | 跑双模型对比并汇总定稿 | `用 evan-plan 规划这个需求，列出当前可用的异构模型让我选一个跑方案 B，汇总后删掉草稿。` |
-| 按已定稿计划连续跑完全部阶段 | `使用 evan-build，按 ~/.t3/plans/<repo>/<slug>/PLAN.md 开始连续实施并完成 PR 前收口。` |
-| 每阶段跑完先停下汇报 | `使用 evan-build，按 ~/.t3/plans/<repo>/<slug>/PLAN.md 执行，每阶段跑完结束跟我汇报。` |
-| 中断后从交接快照续跑 | `使用 evan-build，核对 ~/.t3/plans/<repo>/<slug>/PLAN.md 的阶段状态与交接快照，继续剩余阶段。` |
+| 按已定稿计划连续跑完全部阶段 | `使用 evan-build，按 ~/.t3/plans/<owner__repo>/<slug>/PLAN.md 开始连续实施并完成 PR 前收口。` |
+| 每阶段跑完先停下汇报 | `使用 evan-build，按 ~/.t3/plans/<owner__repo>/<slug>/PLAN.md 执行，每阶段跑完结束跟我汇报。` |
+| 实施中遇阻塞或需求变化，修订计划 | `使用 evan-plan 修订 ~/.t3/plans/<owner__repo>/<slug>/PLAN.md：<阻塞原因或新需求>，已完成阶段不要改，只重做受影响部分。` |
+| 提 PR 后按评审意见修复 | `使用 evan-build，按 ~/.t3/plans/<owner__repo>/<slug>/PLAN.md 处理这批 PR 评审意见，只本地提交，是否推送我来决定。` |
+| 中断后从交接快照续跑 | `使用 evan-build，核对 ~/.t3/plans/<owner__repo>/<slug>/PLAN.md 的阶段状态与交接快照，继续剩余阶段。` |
 
 ## 3. 安装
 
@@ -120,8 +121,8 @@ cp -R ~/ai-skills/evan-skills/skills/evan-build ~/.agents/skills/
 
 | 技能 | 状态 | 一句话用途 | 典型触发词 | 详情 |
 |---|---|---|---|---|
-| [`evan-plan`](skills/evan-plan/README.md) | `Stable` | 调研 Git 基准与代码入口，生成并按需双模型论证分阶段 `PLAN.md` | `evan-plan`、出方案、先 plan | [详情](skills/evan-plan/README.md) |
-| [`evan-build`](skills/evan-build/README.md) | `Stable` | 按 `FROZEN` 计划单线程实施、硬验证、执行 OCR 审查、提交与接力收口 | `evan-build`、执行第 N 阶段 | [详情](skills/evan-build/README.md) |
+| [`evan-plan`](skills/evan-plan/README.md) | `Stable` | 调研 Git 基准与代码入口，生成并按需双模型论证分阶段 `PLAN.md`，并支持冻结后修订 | `evan-plan`、出方案、先 plan | [详情](skills/evan-plan/README.md) |
+| [`evan-build`](skills/evan-build/README.md) | `Stable` | 按 `FROZEN` 计划单线程实施、硬验证、执行 OCR 审查、按项目规范提交、授权后接力收口并处理 PR 评审反馈 | `evan-build`、执行第 N 阶段 | [详情](skills/evan-build/README.md) |
 
 ## 5. 运行依赖与环境适配
 
@@ -130,8 +131,8 @@ cp -R ~/ai-skills/evan-skills/skills/evan-build ~/.agents/skills/
 | 增强能力 | 默认使用工具 | 无对应工具时的降级方式 |
 |---|---|---|
 | 跨模型并行生成 `PLAN_B.md` | T3 Code 编排工具（先 `orchestrator_capabilities` 列出可用模型，由用户选定后 `delegate_task`） | 由用户二选一：直接转单方案，或生成 `HANDOFF_SECOND_OPINION.md` 交外部模型 |
-| 阶段提交前代码审查 | `open-code-review`（本机 `ocr` CLI） | 自动降级为 `open-code-review-delegate`（复用宿主模型审查）或常规人工/测试把关 |
-| 跨阶段抗上下文腐烂换线程 | T3 Code 线程接力工具（最高优先级：`t3_worktree_status`、`t3_thread_launch`） | 输出极简接力提示词（含 `PLAN.md`、worktree 与哈希），由用户开新会话粘贴继续 |
+| 阶段提交前代码审查 | `open-code-review`（本机 `ocr` CLI） | 自动降级为 `open-code-review-delegate`（复用宿主模型审查）；两者均不可用则记录阻塞 |
+| 跨阶段抗上下文腐烂换线程 | 经明确授权的 T3 Code 线程接力（`t3_worktree_status`、`t3_thread_launch`） | 输出极简接力提示词（含 `PLAN.md`、worktree 与哈希），由用户开新会话粘贴继续 |
 
 ## 6. 开源协议
 
