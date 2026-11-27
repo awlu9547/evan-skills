@@ -2,28 +2,27 @@
 
 [中文说明](README.md)
 
-`evan-plan` creates staged implementation plans for new features, optimizations, or bug fixes in existing Git repositories—prioritizing read-only codebase and Git baseline inspection, optional independent second-opinion planning from another model family, and user-confirmed freezing before implementation.
+`evan-plan` creates enterprise-grade staged plans for bug fixes, new features, or optimizations in existing Git repositories—combining read-only investigation, a pre-plan decision gate (Plan B model selection & worktree strategy), first-principles or higher-order impact analysis, and out-of-repo `PLAN.md` freezing ready for PR delivery.
 
 ## What To Use It For
 
 - Investigating entry points, callers, test gaps, and Git history before writing any production code.
-- Assessing task complexity (`轻量` / `标准`) and execution mode (`单线程` / `每阶段提交后换新线程接力`).
-- Drafting `PLAN.md` (Plan A) sliced into independently verifiable functional stages.
-- Dispatching a separate model family to produce an independent `PLAN_B.md` (or generating `HANDOFF_SECOND_OPINION.md` as fallback) on standard-complexity tasks.
-- Resolving differences between Plan A and Plan B with concrete code/test evidence and freezing `PLAN.md` as `FROZEN`.
+- Performing first-principles root-cause analysis for bug fixes, or second- and third-order impact analysis (cross-module contracts, user experience, complexity, and maintenance cost) for new features/optimizations.
+- Auditing reusable modules, justifying any new abstractions, and verifying strict relevance for every file to be touched.
+- Generating independent `PLAN_A.md` and `PLAN_B.md` (using a user-selected accessible cross-family model), reconciling differences with evidence, deleting drafts, and freezing `PLAN.md`.
 
 ## Workflow
 
-1. **Align Requirements & Git Baseline**: Clarify the problem, observable success criteria, and preserved behaviors; inspect `git merge-base`, working tree status, and real code paths in read-only mode.
-2. **Assess Complexity & Draft Plan A**: Write `DRAFT` to `docs/<feature-slug>/PLAN.md` with dependencies, file paths, risks, and verification commands per stage.
-3. **Independent Plan B (Standard Tier)**: Dispatch a subagent from a different model family to read the repo and write `PLAN_B.md` (`AWAITING_OPINION`); lightweight tasks may skip this step.
-4. **Reconcile & Freeze**: Merge verified decisions back into `PLAN.md` and mark `状态: FROZEN` once confirmed by the user.
+1. **Read-only Investigation & Depth Analysis**: Align requirements, Git baseline and branch drift, reusable modules, and run root-cause or higher-order impact analysis.
+2. **Pre-Plan Decision Gate**: Probe accessible cross-family models and ask the user once whether to enable Plan B (and which model to use) and whether to branch into `~/.t3/worktrees/<repo>/<task-slug>`.
+3. **Generate & Merge**: Draft `PLAN.md` directly in single-plan mode, or draft `PLAN_A.md` and `PLAN_B.md` in parallel with strict brief isolation, merge verified decisions into `PLAN.md`, and remove `PLAN_A.md` / `PLAN_B.md`.
+4. **Enterprise Gate & Freeze**: Check reuse, minimal diffs, cross-module contracts, and PR readiness against `references/plan-template.md`, then mark `状态: FROZEN` upon user confirmation.
 
 ## Typical Requests
 
 - "Use `evan-plan` to inspect the codebase and draft a staged plan for this refactor."
-- "This change is non-trivial—run `evan-plan` with a second-opinion plan before we freeze."
-- "Continue `docs/auth-refactor/PLAN.md`; here is Plan B from another model."
+- "Use `evan-plan` to find the root cause of this bug, then ask me before creating plan files."
+- "Continue `~/.t3/plans/my-repo/auth-refactor/PLAN.md`; here is Plan B from another model."
 
 ## What You Need To Provide
 
@@ -33,14 +32,13 @@
 
 ## Outputs
 
-- `docs/<feature-slug>/PLAN.md`: Lifecycle-tracked plan (`DRAFT` → `AWAITING_OPINION` → `MERGING` → `FROZEN`) with Git baseline, stages, verification commands, and progress table.
-- `docs/<feature-slug>/PLAN_B.md` (Standard tier): Independent plan produced by another model family.
-- `docs/<feature-slug>/HANDOFF_SECOND_OPINION.md` (Fallback): Structured handoff file when automated subagent dispatch is unavailable.
+- `~/.t3/plans/<repo>/<feature-slug>/PLAN.md`: Out-of-repo persistent plan (never committed or pushed) with lifecycle tracking, depth analysis, strong-relevance file list, contract checks, PR checklist, 5-state progress table, and stage handoff section.
+- `PLAN_A.md`, `PLAN_B.md` (and `HANDOFF_SECOND_OPINION.md` if used): Temporary planning drafts deleted automatically once `PLAN.md` is merged.
 
 ## Boundaries
 
-- Strictly **read-only on production code** during planning; only writes plan artifacts under the target plan directory.
-- Automated Plan B dispatch relies on multi-model orchestration (such as T3 Code's `orchestrator_capabilities` / `delegate_task`); when unavailable, it falls back cleanly to `HANDOFF_SECOND_OPINION.md`.
+- Strictly **read-only on the repository** during planning; never edits business code or creates branches/worktrees early.
+- When automated cross-model dispatch is unavailable, the user chooses between single-plan mode or generating `HANDOFF_SECOND_OPINION.md`.
 - Only plans marked `状态: FROZEN` are eligible for execution.
 
 ## Related Skills

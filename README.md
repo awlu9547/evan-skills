@@ -39,9 +39,9 @@
 
 大型或跨模块改动的常见翻车点在于：**未查明现状就直接改代码**、**单一模型思考存在盲区**、**长对话后期上下文腐烂**以及**改完就宣称通过却未重跑最新验证**。`evan-plan` 与 `evan-build` 通过显式的计划状态机（`DRAFT` → `AWAITING_OPINION` → `MERGING` → `FROZEN`）将“想清楚”和“写正确”彻底解耦：
 
-- **规划阶段严守只读**：`evan-plan` 仅更新 `docs/<feature-slug>/` 下的计划文件，不提前触碰业务代码。
-- **独立双方案抗盲区**：标准档任务会避开当前主模型家族独立生成 `PLAN_B.md`，所有否定结论必须给出代码或测试证据。
-- **硬验证与受控审查**：`evan-build` 要求每次改码后重跑验证命令，每阶段默认只做 1 次 Open Code Review，避免无休止循环。
+- **规划阶段严守只读与仓库外留存**：`evan-plan` 全程只读业务仓库，不提前切分支；计划默认保存在仓库外的 `~/.t3/plans/<repo>/<feature-slug>/PLAN.md`，绝不进入 Git 提交与 PR。
+- **前置确认与分流深度分析**：生成计划前先询问是否启用方案 B（并由用户从当前可访问的异构模型中选定）以及是否在 `~/.t3/worktrees/<repo>/<task-slug>` 新建独立 worktree；Bug 修复走第一性原理根因分析，新增或优化必须推演二阶、三阶影响。
+- **连续实施、强相关校验与交接快照**：`evan-build` 默认按阶段连续跑完，每阶段做强相关 Diff 复核、改码重测与受控 Open Code Review，纯业务提交后把真实短哈希与 5 行交接快照回写到仓库外 `PLAN.md`，并在末阶段输出可直接提 PR 的交付摘要。
 
 ## 2. 快速开始
 
@@ -49,11 +49,11 @@
 
 | 想做什么 | 直接这样说 |
 |---|---|
-| 调研现状并出分阶段计划 | `使用 evan-plan 调研这个问题，先按现状出一份分阶段计划，不要改业务代码。` |
-| 复杂任务跑双模型交叉方案 | `用 evan-plan 按标准档规划这个重构，跑完独立方案 B 核实分歧后再给我确认。` |
-| 按已定稿计划执行单个阶段 | `使用 evan-build，按 docs/xxx/PLAN.md 执行第 1 阶段。` |
-| 连续执行多阶段并自动接力 | `使用 evan-build，按 docs/xxx/PLAN.md 依次执行第 2 和第 3 阶段。` |
-| 中断后恢复未完成阶段 | `使用 evan-build，核对 docs/xxx/PLAN.md 和当前提交记录，继续完成剩余步骤。` |
+| 调研现状并制定企业级计划 | `使用 evan-plan 调研这个问题，评估后询问我是否开方案 B 及分支策略，不要改业务代码。` |
+| 跑双模型对比并汇总定稿 | `用 evan-plan 规划这个需求，列出当前可用的异构模型让我选一个跑方案 B，汇总后删掉草稿。` |
+| 按已定稿计划连续跑完全部阶段 | `使用 evan-build，按 ~/.t3/plans/<repo>/<slug>/PLAN.md 开始连续实施并完成 PR 前收口。` |
+| 每阶段跑完先停下汇报 | `使用 evan-build，按 ~/.t3/plans/<repo>/<slug>/PLAN.md 执行，每阶段跑完结束跟我汇报。` |
+| 中断后从交接快照续跑 | `使用 evan-build，核对 ~/.t3/plans/<repo>/<slug>/PLAN.md 的阶段状态与交接快照，继续剩余阶段。` |
 
 ## 3. 安装
 
@@ -129,9 +129,9 @@ cp -R ~/ai-skills/evan-skills/skills/evan-build ~/.agents/skills/
 
 | 增强能力 | 默认使用工具 | 无对应工具时的降级方式 |
 |---|---|---|
-| 标准档自动生成 `PLAN_B.md` | T3 Code 编排工具（`orchestrator_capabilities`、`delegate_task`） | 自动退回生成 `HANDOFF_SECOND_OPINION.md`，交由外部模型人工接力 |
+| 跨模型并行生成 `PLAN_B.md` | T3 Code 编排工具（先 `orchestrator_capabilities` 列出可用模型，由用户选定后 `delegate_task`） | 由用户二选一：直接转单方案，或生成 `HANDOFF_SECOND_OPINION.md` 交外部模型 |
 | 阶段提交前代码审查 | `open-code-review`（本机 `ocr` CLI） | 自动降级为 `open-code-review-delegate`（复用宿主模型审查）或常规人工/测试把关 |
-| 跨阶段抗上下文腐烂换线程 | T3 Code 线程接力工具（`t3_worktree_status`、`t3_thread_launch`） | 提示用户手动开启新会话，附极简 `PLAN.md` 路径与阶段编号继续 |
+| 跨阶段抗上下文腐烂换线程 | T3 Code 线程接力工具（最高优先级：`t3_worktree_status`、`t3_thread_launch`） | 输出极简接力提示词（含 `PLAN.md`、worktree 与哈希），由用户开新会话粘贴继续 |
 
 ## 6. 开源协议
 

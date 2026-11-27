@@ -39,9 +39,9 @@
 
 Most failures in non-trivial agent coding tasks stem from four habits: **editing code before understanding entry points**, **single-model blind spots**, **context rot in long sessions**, and **claiming tests pass without re-running after the last edit**. `evan-plan` and `evan-build` separate thinking from building through an explicit lifecycle (`DRAFT` → `AWAITING_OPINION` → `MERGING` → `FROZEN`):
 
-- **Read-only planning**: `evan-plan` only edits plan artifacts under `docs/<feature-slug>/` and never touches production source files early.
-- **Cross-model second opinion**: Standard-tier tasks dispatch a separate model family to produce an independent `PLAN_B.md`; rejecting an alternative requires concrete code or test evidence.
-- **Hard verification & bounded review**: `evan-build` requires re-running verification after every code edit and caps Open Code Review at 1 pass per stage by default to prevent endless review loops.
+- **Read-only planning & out-of-repo plans**: `evan-plan` keeps the repository strictly read-only and stores plans out of repo at `~/.t3/plans/<repo>/<feature-slug>/PLAN.md` so planning drafts never pollute commits or PRs.
+- **Pre-plan gate & depth analysis**: Before writing any plan file, the agent probes accessible models and asks whether to enable an independent Plan B (user selects the model) and whether to branch into `~/.t3/worktrees/<repo>/<task-slug>`. Bug fixes require first-principles root-cause analysis; new features require second- and third-order impact analysis.
+- **Continuous execution, strict diff checks & handoff snapshots**: `evan-build` runs all stages continuously by default, verifies strong-relevance diffs, runs tests and bounded Open Code Review, commits only business code, writes real short SHAs and a 5-line handoff snapshot back to `PLAN.md`, and outputs a PR-ready summary at closure.
 
 ## 2. Quick Start
 
@@ -49,11 +49,11 @@ Once installed, mention the skill explicitly or describe your task naturally. Co
 
 | What You Want | Prompt Example |
 |---|---|
-| Investigate & draft a staged plan | `Use evan-plan to inspect this codebase and draft a staged plan without modifying source files.` |
-| Run dual-model planning for complex work | `Use evan-plan in standard mode for this refactor, collect an independent Plan B, and reconcile differences before freezing.` |
-| Execute one stage from a frozen plan | `Use evan-build to execute Stage 1 according to docs/xxx/PLAN.md.` |
-| Execute multiple stages sequentially | `Use evan-build to execute Stages 2 and 3 according to docs/xxx/PLAN.md.` |
-| Resume an interrupted build | `Use evan-build to check docs/xxx/PLAN.md and recent commits, then finish the remaining steps.` |
+| Investigate & create an enterprise plan | `Use evan-plan to inspect this codebase, then ask me whether to run Plan B and create a new worktree branch without modifying source files.` |
+| Run dual-model comparison & merge | `Use evan-plan to list accessible cross-family models for Plan B, let me pick one, merge into PLAN.md, and delete the drafts.` |
+| Execute all stages continuously | `Use evan-build to run all stages from ~/.t3/plans/<repo>/<slug>/PLAN.md continuously through PR-ready closure.` |
+| Pause and report after each stage | `Use evan-build to execute ~/.t3/plans/<repo>/<slug>/PLAN.md, stopping to report after each stage.` |
+| Resume from handoff snapshot | `Use evan-build to check stage states and the handoff snapshot in ~/.t3/plans/<repo>/<slug>/PLAN.md, then continue.` |
 
 ## 3. Installation
 
@@ -129,9 +129,9 @@ The core planning, implementation, verification, and Git commit workflows work *
 
 | Enhancement | Preferred Tooling | Fallback When Unavailable |
 |---|---|---|
-| Automated `PLAN_B.md` in standard mode | T3 Code orchestration (`orchestrator_capabilities`, `delegate_task`) | Writes `HANDOFF_SECOND_OPINION.md` for manual external-model review |
+| Cross-model `PLAN_B.md` generation | T3 Code orchestration (`orchestrator_capabilities` to list accessible models, user selects, `delegate_task`) | Offers a choice between single-plan mode or generating `HANDOFF_SECOND_OPINION.md` |
 | Pre-commit stage code review | `open-code-review` (`ocr` CLI) | Falls back to `open-code-review-delegate` (host-model review) or standard testing checks |
-| Cross-stage fresh-thread handoff | T3 Code thread relay (`t3_worktree_status`, `t3_thread_launch`) | Prompts the user to start a fresh session with the `PLAN.md` path and next stage number |
+| Cross-stage fresh-thread handoff | T3 Code thread relay (highest priority: `t3_worktree_status`, `t3_thread_launch`) | Outputs a compact copy-ready handoff prompt with `PLAN.md`, worktree path, and commit SHA |
 
 ## 6. License
 
